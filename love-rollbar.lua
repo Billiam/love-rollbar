@@ -2,7 +2,6 @@ local foreground, current_folder, work_channel, response_channel = unpack({...})
 
 if foreground == false then
   require('love.filesystem')
-  require('love.timer')
   local request = require(current_folder .. 'luajit-request')
 
   local post_request = function(url, data)

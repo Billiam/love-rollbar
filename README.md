@@ -36,7 +36,7 @@ local Rollbar = require('vendor.love-rollbar')
 
 function love.load()
   -- configure Rollbar
-  Rollbar.access_token = 'you-api-token'
+  Rollbar.access_token = 'your-api-token'
   -- optional, but helpful to distinguish between deployed code and testing code
   Rollbar.environment = 'development'
   -- optional, your game/app's version
