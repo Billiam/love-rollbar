@@ -5,9 +5,9 @@ report errors and stacktraces to [Rollbar](http://rollbar.com)
 via a background thread.
 
 Note that errors (such as syntax errors) which prevent your code from being
-loaded will not trigger rollbar notifications.
+loaded will not trigger Rollbar notifications.
 
-A rollbar demo can be found here: https://rollbar.com/demo/demo/
+A Rollbar demo can be found here: https://rollbar.com/demo/demo/
 
 Installation
 ============
@@ -24,7 +24,7 @@ Rollbar Setup
 Create an account at [Rollbar.com](http://rollbar.com), or create a new project if you have an account already. 
 In your project settings, locate your project access tokens, and find your post_client_token. This is an api token with limited permissions.
 
-You will need to pass this token to the rollbar library (see below), and you will need to distribute this token with your game.
+You will need to pass this token to the Rollbar library (see below), and you will need to distribute this token with your game.
 
 Optionally, set up all your notification channels (hipchat/pivotal/trello/whatever) in Rollbar.
 
@@ -35,7 +35,7 @@ Usage
 local Rollbar = require('vendor.love-rollbar')
 
 function love.load()
-  -- configure rollbar
+  -- configure Rollbar
   Rollbar.access_token = 'you-api-token'
   -- optional, but helpful to distinguish between deployed code and testing code
   Rollbar.environment = 'development'
