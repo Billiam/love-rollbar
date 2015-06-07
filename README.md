@@ -16,7 +16,7 @@ Copy `love-rollbar.lua`, `json.lua` and the `luajit-request` directory to a loca
 Luajit-request requires curl. For windows, DLL binaries are available here: https://github.com/LPGhatguy/luajit-request/releases/tag/v2.1.0
 
 These need to be placed next to your `love.exe` during development, and next to your fused exe when you distribute your game 
-( see [Game Distribution](https://github.com/LPGhatguy/luajit-request/releases/tag/v2.1.0) )
+( see [Game Distribution](https://love2d.org/wiki/Game_Distribution) )
 
 Rollbar Setup
 -------------
