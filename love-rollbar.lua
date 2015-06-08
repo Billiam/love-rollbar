@@ -15,14 +15,11 @@ if foreground == false then
     local data = work_channel:demand()
     if data and type(data) == 'table' then
       local url, json = unpack(data)
-
       if url and json then
-      
         response = post_request(url, json)
-
         if response then
           if response.code == '200' then
-            response_channel:push({'done', url, json})
+            response_channel:push({'done', url, json, response.body})
           else
             print('Error posting to rollbar')
             print('Code: ' .. response.code)
@@ -140,6 +137,24 @@ else
     return stack
   end
 
+  local frame_locals = function(level)
+    local index = 1
+    local variables = {}
+
+    while true do
+      local name, value = debug.getlocal(level, index)
+      if not name then break end
+      if type(value) == 'function' then
+        value = tostring(value)
+      end
+      variables[name] = value
+
+      index = index + 1
+    end
+
+    return variables
+  end
+  
   local parse_stack = function(stack, truncate)
     truncate = truncate or 1
 
@@ -149,17 +164,23 @@ else
       local data = stack[i]
       local frame = {}
       frame.filename = data.source
-      frame.lineno = data.currentline
+      
+      if data.currentline > 0 then
+        frame.lineno = data.currentline
+      end
+      
       frame.method = data.name or data.short_src
 
       if data.what == 'Lua' and data.source:sub(1,1) == '@' then
-        -- frame.filename = 'app/' .. data.source
-        local current, pre, post = read_lines(data.source:sub(2), data.currentline, 3)
-        
+        frame.filename = '/app/' .. data.source
+        local current, pre, post = read_lines(data.source:sub(2), data.currentline)
+        frame.locals = frame_locals(i + 1)
+
         if current then
           frame.code = current
         end
 
+        --not currently used by rollbar
         if pre or post then
           frame.context = {}
 
@@ -202,6 +223,9 @@ else
         platform = 'client',
         language = 'lua',
         framework = framework(),
+        server = {
+          root = "/app"
+        },
         notifier = {
           name = "love-rollbar",
           version = "0.0.0"
