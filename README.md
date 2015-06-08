@@ -32,12 +32,18 @@ Usage
 =====
 
 ### Rollbar.error(message, options)
-Send and error messange and traceback to Rollbar.
+Send and error message and traceback to Rollbar.
 ##### Parameters
 * `message`: (**string**) An arbitrary error message
 * `options`: (**table**) A table of options with the following keys (optional)
   * `level`: (**string**) [_default=error_] The error level to report. <br> May be one of `critical`, `error`, `warning`, `info`, `debug` (optional)
 
+### Rollbar.debug(message, options)
+### Rollbar.info(message, options)
+### Rollbar.warning(message, options)
+### Rollbar.critical(message, options)
+
+Same as Rollbar.error, but using the relevant error level.
 
 Example
 =======

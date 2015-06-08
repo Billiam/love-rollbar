@@ -61,7 +61,11 @@ else
   end
 
   local SEVERITY = {
-    "critical", "error", "warning", "info", "debug"
+    critical = true,
+    error = true,
+    warning = true,
+    info = true,
+    debug = true,
   }
 
   local ERROR_TYPES = {
@@ -250,20 +254,28 @@ else
     exception.message = message
     exception.class = error_type(message)
     local stack = get_stack()
-    result.data.body.trace.frames = parse_stack(stack, 5)
+    result.data.body.trace.frames = parse_stack(stack, 6)
 
     return result
   end
 
-
-  Rollbar.error = function(message, options)
+  local rollbar_call = function(notification_type, message, options)
     if not Rollbar.access_token then
       print('Rollbar access token has not been set')
       return
     end
 
+    options = options or {}
+    options.level = options.level or notification_type
+
     local result = generate_request(message, options)
     submit_to_rollbar(result)
+  end
+
+  for notification_type,val in pairs(SEVERITY) do
+    Rollbar[notification_type] = function(message, options)
+      rollbar_call(notification_type, message, options)
+    end
   end
 
   return Rollbar
