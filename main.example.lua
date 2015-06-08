@@ -13,6 +13,11 @@ end
 
 local old_error = love.errhand
 function love.errhand(message)
-  Rollbar.error(message)
+  Rollbar.error(message, {
+    level = "critical",
+    data = {
+      my_custom_data = 12345
+    }
+  })
   old_error(message)
 end

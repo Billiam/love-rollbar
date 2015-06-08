@@ -15,14 +15,11 @@ if foreground == false then
     local data = work_channel:demand()
     if data and type(data) == 'table' then
       local url, json = unpack(data)
-
       if url and json then
-      
-        response = post_request(url, json)
-
+        local response = post_request(url, json)
         if response then
           if response.code == '200' then
-            response_channel:push({'done', url, json})
+            response_channel:push({'done', url, json, response.body})
           else
             print('Error posting to rollbar')
             print('Code: ' .. response.code)
@@ -63,20 +60,28 @@ else
     return string.format("LOVE %s.%s.%s under %s", love._version_major, love._version_minor, love._version_revision, love._os)
   end
 
+  local SEVERITY = {
+    critical = true,
+    error = true,
+    warning = true,
+    info = true,
+    debug = true,
+  }
+
+  local ERROR_TYPES = {
+    ['attempt to .+ %(a .+ value%)'] = 'Type error',
+    ['attempt to .+ a .+ value'] = 'Type error',
+    ['expected %(to close'] = 'Expected to close',
+    ['unfinished string near'] = 'Unfinished string',
+    ['expected near'] = 'Expected near',
+    ['=\' expected near'] = '= Expected near',
+    ['unexpected symbol near'] = 'Unexpected near',
+  }
+
   -- parse an error message to create an error type
   local error_type = function(message)
-    local errors = {
-      ['attempt to .+ %(a .+ value%)'] = 'Type error',
-      ['attempt to .+ a .+ value'] = 'Type error',
-      ['expected %(to close'] = 'Expected to close',
-      ['unfinished string near'] = 'Unfinished string',
-      ['expected near'] = 'Expected near',
-      ['=\' expected near'] = '= Expected near',
-      ['unexpected symbol near'] = 'Unexpected near',
-    }
-
     if type(message) == 'string' then
-      for match,e_type in pairs(errors) do
+      for match,e_type in pairs(ERROR_TYPES) do
         if string.find(message, match) then
           return e_type
         end
@@ -140,6 +145,24 @@ else
     return stack
   end
 
+  local frame_locals = function(level)
+    local index = 1
+    local variables = {}
+
+    while true do
+      local name, value = debug.getlocal(level, index)
+      if not name then break end
+      if type(value) == 'function' then
+        value = tostring(value)
+      end
+      variables[name] = value
+
+      index = index + 1
+    end
+
+    return variables
+  end
+  
   local parse_stack = function(stack, truncate)
     truncate = truncate or 1
 
@@ -149,17 +172,23 @@ else
       local data = stack[i]
       local frame = {}
       frame.filename = data.source
-      frame.lineno = data.currentline
+      
+      if data.currentline > 0 then
+        frame.lineno = data.currentline
+      end
+      
       frame.method = data.name or data.short_src
 
       if data.what == 'Lua' and data.source:sub(1,1) == '@' then
-        -- frame.filename = 'app/' .. data.source
-        local current, pre, post = read_lines(data.source:sub(2), data.currentline, 3)
-        
+        frame.filename = '/app/' .. data.source
+        local current, pre, post = read_lines(data.source:sub(2), data.currentline)
+        frame.locals = frame_locals(i + 1)
+
         if current then
           frame.code = current
         end
 
+        --not currently used by rollbar
         if pre or post then
           frame.context = {}
 
@@ -178,6 +207,10 @@ else
     return frames
   end
 
+  local parse_severity = function(level)
+    return SEVERITY[level] and level or nil
+  end
+
   local submit_to_rollbar = function(data)
     init_thread()
 
@@ -185,7 +218,9 @@ else
     work_channel:push({'https://api.rollbar.com/api/1/item/', encoded})
   end
 
-  local generate_request = function(message)
+  local generate_request = function(message, options)
+    options = options or {}
+
     local result = {
       access_token = Rollbar.access_token,
       data = {
@@ -202,6 +237,9 @@ else
         platform = 'client',
         language = 'lua',
         framework = framework(),
+        server = {
+          root = "/app"
+        },
         notifier = {
           name = "love-rollbar",
           version = "0.0.0"
@@ -209,25 +247,39 @@ else
       }
     }
 
+    if options.data and type(options.data) == 'table' then
+      result.data.custom = options.data
+    end
+
     local exception = result.data.body.trace.exception
+
+    result.data.level = parse_severity(options.level)
 
     exception.message = message
     exception.class = error_type(message)
     local stack = get_stack()
-    result.data.body.trace.frames = parse_stack(stack, 5)
+    result.data.body.trace.frames = parse_stack(stack, 6)
 
     return result
   end
 
-
-  Rollbar.error = function(message)
+  local rollbar_call = function(notification_type, message, options)
     if not Rollbar.access_token then
       print('Rollbar access token has not been set')
       return
     end
 
-    local result = generate_request(message)
+    options = options or {}
+    options.level = options.level or notification_type
+
+    local result = generate_request(message, options)
     submit_to_rollbar(result)
+  end
+
+  for notification_type in pairs(SEVERITY) do
+    Rollbar[notification_type] = function(message, options)
+      rollbar_call(notification_type, message, options)
+    end
   end
 
   return Rollbar
