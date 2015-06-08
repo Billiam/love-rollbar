@@ -60,20 +60,24 @@ else
     return string.format("LOVE %s.%s.%s under %s", love._version_major, love._version_minor, love._version_revision, love._os)
   end
 
+  local SEVERITY = {
+    "critical", "error", "warning", "info", "debug"
+  }
+
+  local ERROR_TYPES = {
+    ['attempt to .+ %(a .+ value%)'] = 'Type error',
+    ['attempt to .+ a .+ value'] = 'Type error',
+    ['expected %(to close'] = 'Expected to close',
+    ['unfinished string near'] = 'Unfinished string',
+    ['expected near'] = 'Expected near',
+    ['=\' expected near'] = '= Expected near',
+    ['unexpected symbol near'] = 'Unexpected near',
+  }
+
   -- parse an error message to create an error type
   local error_type = function(message)
-    local errors = {
-      ['attempt to .+ %(a .+ value%)'] = 'Type error',
-      ['attempt to .+ a .+ value'] = 'Type error',
-      ['expected %(to close'] = 'Expected to close',
-      ['unfinished string near'] = 'Unfinished string',
-      ['expected near'] = 'Expected near',
-      ['=\' expected near'] = '= Expected near',
-      ['unexpected symbol near'] = 'Unexpected near',
-    }
-
     if type(message) == 'string' then
-      for match,e_type in pairs(errors) do
+      for match,e_type in pairs(ERROR_TYPES) do
         if string.find(message, match) then
           return e_type
         end
@@ -199,6 +203,10 @@ else
     return frames
   end
 
+  local parse_severity = function(level)
+    return SEVERITY[level] and level or nil
+  end
+
   local submit_to_rollbar = function(data)
     init_thread()
 
@@ -206,7 +214,9 @@ else
     work_channel:push({'https://api.rollbar.com/api/1/item/', encoded})
   end
 
-  local generate_request = function(message)
+  local generate_request = function(message, options)
+    options = options or {}
+
     local result = {
       access_token = Rollbar.access_token,
       data = {
@@ -235,6 +245,8 @@ else
 
     local exception = result.data.body.trace.exception
 
+    result.data.level = parse_severity(options.level)
+
     exception.message = message
     exception.class = error_type(message)
     local stack = get_stack()
@@ -244,13 +256,13 @@ else
   end
 
 
-  Rollbar.error = function(message)
+  Rollbar.error = function(message, options)
     if not Rollbar.access_token then
       print('Rollbar access token has not been set')
       return
     end
 
-    local result = generate_request(message)
+    local result = generate_request(message, options)
     submit_to_rollbar(result)
   end
 
