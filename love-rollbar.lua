@@ -1,3 +1,7 @@
+local Rollbar = {
+  __VERSION = '0.1.0'
+}
+
 local foreground, current_folder, work_channel, response_channel = unpack({...})
 
 if foreground == false then
@@ -52,8 +56,6 @@ else
   end
 
   local json = require(current_folder .. 'json')
-
-  local Rollbar = {}
 
   -- Get a version string for Love reporting
   local framework = function()
@@ -242,7 +244,7 @@ else
         },
         notifier = {
           name = "love-rollbar",
-          version = "0.0.0"
+          version = Rollbar.__VERSION
         }
       }
     }
