@@ -37,6 +37,7 @@ Send and error message and traceback to Rollbar.
 * `message`: (**string**) An arbitrary error message
 * `options`: (**table**) A table of options with the following keys (optional)
   * `level`: (**string**) [_default=error_] The error level to report. <br> May be one of `critical`, `error`, `warning`, `info`, `debug` (optional)
+  * `data` : (**table**) Any extra data to pass to Rollbar for your error. (optional)
 
 ### Rollbar.debug(message, options)
 ### Rollbar.info(message, options)

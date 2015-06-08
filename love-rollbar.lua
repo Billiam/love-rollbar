@@ -16,7 +16,7 @@ if foreground == false then
     if data and type(data) == 'table' then
       local url, json = unpack(data)
       if url and json then
-        response = post_request(url, json)
+        local response = post_request(url, json)
         if response then
           if response.code == '200' then
             response_channel:push({'done', url, json, response.body})
@@ -247,6 +247,10 @@ else
       }
     }
 
+    if options.data and type(options.data) == 'table' then
+      result.data.custom = options.data
+    end
+
     local exception = result.data.body.trace.exception
 
     result.data.level = parse_severity(options.level)
@@ -272,7 +276,7 @@ else
     submit_to_rollbar(result)
   end
 
-  for notification_type,val in pairs(SEVERITY) do
+  for notification_type in pairs(SEVERITY) do
     Rollbar[notification_type] = function(message, options)
       rollbar_call(notification_type, message, options)
     end
