@@ -1,5 +1,7 @@
 love-rollbar
 ============
+[![Error Tracking](https://d26gfdfi90p7cf.cloudfront.net/rollbar-badge.144534.o.png)](https://rollbar.com)
+
 This is a library for [LÖVE](http://love2d.org) which can be used to
 report errors and stacktraces to [Rollbar](http://rollbar.com)
 via a background thread.
