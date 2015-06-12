@@ -34,7 +34,7 @@ Usage
 =====
 
 ### Rollbar.error(message, options)
-Send and error message and traceback to Rollbar.
+Send an error message and traceback to Rollbar.
 ##### Parameters
 * `message`: (**string**) An arbitrary error message
 * `options`: (**table**) A table of options with the following keys (optional)
